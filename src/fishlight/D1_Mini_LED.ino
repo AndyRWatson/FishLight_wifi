@@ -25,6 +25,8 @@ static int minute;
 static int second;
 int time_period = 60000;  // 10 minutes
 unsigned long time_now=0;
+char lightScene[10];
+
 
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
@@ -86,11 +88,6 @@ void getTime()
   second=tc.getSeconds();
   Serial.print(daysOfTheWeek[tc.getDay()]);
   Serial.print(", ");
-  Serial.print(hour);
-  Serial.print(":");
-  Serial.print(minute);
-  Serial.print(":");
-  Serial.println(second);
   Serial.println(tc.getFormattedTime());
   timeSet=true;
   time_now=millis();
@@ -130,26 +127,18 @@ void setLight()
   }  
 }
 
-void disco()
-{
-  stepper(255,0,0,100);
-  slider(255,0,0,50);
-  slider(255,255,0,50);
-  slider(255,255,255,50);
-  slider(0,255,255,50);
-  slider(0,0,255,50);
-  slider(0,255,0,50);
-}
 
 void Moonlight()
 {
   allOn(0, 0, 255);
+  strcpy(lightScene,"Moonlight");
   Serial.println("Moonlight ");
 }
 
 void Sunny()
 {
    allOn(255, 255, 0);
+   strcpy(lightScene,"Sunny");
 //  Serial.println("Sunny");
  
 }
@@ -157,6 +146,7 @@ void Sunny()
 void Midday()
 {
    allOn(255, 255, 255);
+   strcpy(lightScene,"Sunny");
    Serial.println("Midday");
  
 }
@@ -164,6 +154,7 @@ void Midday()
 void Overcast()
 {
    allOn(201, 226, 255);
+   strcpy(lightScene,"Overcast");  
    Serial.println("Overcast");
  
 }
@@ -171,6 +162,7 @@ void Overcast()
 void Sunrise()
 {
    allOn(255, 255, 0);
+   strcpy(lightScene,"Sunrise");  
    Serial.println("Sunrise");
  
 }
@@ -178,27 +170,11 @@ void Sunrise()
 void Sunset()
 {
    allOn(255, 0, 0);
+   strcpy(lightScene,"Sunset");  
    Serial.println("Sunset");
  
 }
 
-void stepper(int r,int g, int b, int d)
-{
-   for (int i = 0; i <= NUM_LEDS; i++) {
-    leds[i] = CRGB ( r, g, b);
-    leds[i-1] = CRGB ( 0, 0, 0);
-    FastLED.show();
-     delay(d);
-   }
-}
-void slider(int r,int g, int b, int d)
-{
-   for (int i = 0; i <= NUM_LEDS; i++) {
-    leds[i] = CRGB ( r, g, b);
-    FastLED.show();
-     delay(d);
-   }
-}
 
 void allOn(int r, int g, int b)
 {
@@ -212,7 +188,6 @@ void allOff()
 {
   allOn(0,0,0);
 }
-
 
 
 boolean restoreConfig() {
@@ -309,9 +284,23 @@ void startWebServer() {
     Serial.print("Starting Web Server at ");
     Serial.println(WiFi.localIP());
     webServer.on("/", []() {
-      String s = "<h1>FishTank Light</h1><p><a href=\"/reset\">Reset Wi-Fi Settings</a></p>";
+      String s = "<h1>FishTank Light</h1><p><a href=\"/reset\">Reset Wi-Fi Settings</a></p><p><a href=\"/setup\">Light Setup</a></p><p><a href=\"/status\">FishTankLight Status</a></p>";
       webServer.send(200, "text/html", makePage("STA mode", s));
     });
+
+    webServer.on("/setup", []() {
+      String s = "<h1>FishTank Light</h1><p>Number of LEDS : 7</p>";
+      webServer.send(200, "text/html", makePage("STA mode", s));
+    });
+
+   webServer.on("/status", []() {
+      String s = "<h1>FishTank Light Status</h1><p>Number of LEDS : 7</p>";
+      s += "<p>Current Light Colour : ";
+      s += lightScene;
+      s += "</p>";
+      webServer.send(200, "text/html", makePage("STA mode", s));
+    });
+    
     webServer.on("/reset", []() {
       for (int i = 0; i < 96; ++i) {
         EEPROM.write(i, 0);
