@@ -29,7 +29,7 @@ char lightScene[10];
 
 
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-
+char scenes[7][12] = {"off" ,"Sunrise", "Midday","Sunny","Overcast","Sunset","Moonlight"};
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
 //NTPClient tc(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
@@ -284,7 +284,7 @@ void startWebServer() {
     Serial.print("Starting Web Server at ");
     Serial.println(WiFi.localIP());
     webServer.on("/", []() {
-      String s = "<h1>FishTank Light</h1><p><a href=\"/reset\">Reset Wi-Fi Settings</a></p><p><a href=\"/setup\">Light Setup</a></p><p><a href=\"/status\">FishTankLight Status</a></p>";
+      String s = "<h1>FishTank Light</h1><p><a href=\"/reset\">Reset Wi-Fi Settings</a></p><p><a href=\"/setup\">Light Setup</a></p><p><a href=\"/scene\">Light Scene</a></p><p><a href=\"/status\">FishTankLight Status</a></p>";
       webServer.send(200, "text/html", makePage("STA mode", s));
     });
 
@@ -300,6 +300,33 @@ void startWebServer() {
       s += "</p>";
       webServer.send(200, "text/html", makePage("STA mode", s));
     });
+
+   webServer.on("/scene", []() {
+      String s = "<h1>FishTank Light Scene</h1>";
+      s +="<body> <p>Here's the list of scenes. Select any one:</p>";
+      s +="<form method=\"get\" action=\"/changeScene\">";
+      s +="<select name = \"scene\">";
+      for (int i = 0; i <=7; ++i) {
+        s += "<option value=\"";
+        s += scenes[i];
+        s += "\">";
+        s += scenes[i];
+        s += "</option>";
+      }
+      s += "<input type=\"submit\" value=\"Submit\">";
+      s += "</select></form></body>";
+      webServer.send(200, "text/html", makePage("STA mode", s));
+    });
+
+   webServer.on("/changeScene", []() {
+      String s = "<h1>FishTank Light Scene Set</h1>"; 
+      String newScene = urlDecode(webServer.arg("scene"));
+      s += newScene;
+      Serial.print("Request Change Scene to :");
+      Serial.println(newScene);
+      webServer.send(200, "text/html", makePage("STA mode", s));
+      setScene(newScene);
+    });
     
     webServer.on("/reset", []() {
       for (int i = 0; i < 96; ++i) {
@@ -311,6 +338,12 @@ void startWebServer() {
     });
   }
   webServer.begin();
+}
+
+void setScene(String newscene)
+{
+  Serial.print("setScene() :");
+  Serial.println(newscene);
 }
 
 void setupMode() {
@@ -348,6 +381,7 @@ String makePage(String title, String contents) {
   s += "</body></html>";
   return s;
 }
+
 
 String urlDecode(String input) {
   String s = input;
